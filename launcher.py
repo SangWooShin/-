@@ -4,20 +4,10 @@ from internetbook import *
 
 #### Menu  implementation
 def printMenu():
-    print("\nWelcome! Book Manager Program (xml version)")
-    print("========Menu==========")
-    print("Load xml:  l")
-    print("Print dom to xml: p")
-    print("Quit program:   q")
-    print("print Book list: b")
-    print("Add new book: a")
-    print("sEarch Book Title: e")
-    print("Make html: m")
-    print("----------------------------------------")
-    print("Get book data from isbn: g")
-    print("send maIl : i")
-    print("sTart Web Service: t")
-    print("========Menu==========")
+    print("-------------")
+    print("날씨 검색 : w")
+    print("종료      : q")
+    print("-------------")
     
 def launcherFunction(menu):
     if menu ==  'l':
@@ -35,7 +25,7 @@ def launcherFunction(menu):
     elif menu == 'e':
         keyword = str(input ('input keyword to search :'))
         printBookList(SearchBookTitle(keyword))
-    elif menu == 'g': 
+    elif menu == 'w':
         local = str(input ('도/광역시 를 입력하세요 :'))
         ret = getBookDataFromISBN(local)
         AddBook(ret)
