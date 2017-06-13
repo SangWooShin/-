@@ -149,7 +149,7 @@ def printBookList(blist):
 def checkDocument():
     global BooksDoc
     if BooksDoc == None:
-        #print("Error : Document is empty")
+        print("Error : Document is empty")
         return False
     return True
   
