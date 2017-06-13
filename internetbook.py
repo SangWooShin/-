@@ -4,10 +4,34 @@ from http.client import HTTPConnection
 from http.server import BaseHTTPRequestHandler, HTTPServer
 from datetime import datetime
 import datetime, time
+import mimetypes
+import mysmtplib
+from email.mime.base import MIMEBase
+from email.mime.text import MIMEText
+
 
 ##global
 conn = None
-#regKey = '73ee2bc65b*******8b927fc6cd79a97'
+
+#메일에 보낼 정보
+sendMailStr = ["  ", "  "]
+
+
+# global value
+host = "smtp.gmail.com"  # Gmail STMP 서버 주소.
+port = "587"
+htmlFileName = "logo.html"
+
+senderAddr = "tlstkddn159@hamil.com.com"  # 보내는 사람 email 주소.
+recipientAddr = "jay0927@kpu.ac.kr"  # 받는 사람 email 주소.
+
+msg = MIMEBase("multipart", "alternative")
+msg['Subject'] = "우리 동네 기상/미세먼지 예보"
+msg['From'] = senderAddr
+msg['To'] = recipientAddr
+
+
+
 
 # 네이버 OpenAPI 접속 정보 information
 server = "newsky2.kma.go.kr"
@@ -35,7 +59,7 @@ def connectOpenAPIServer():
     conn = HTTPConnection(server)
         
 def getBookDataFromISBN(local):
-    global server, regKey, conn, dayMonth, inX, inY, count
+    global server, regKey, conn, dayMonth, inX, inY, count, sendMailStr
     localclass = []
 
     if local == '경기' or '경기도':
@@ -108,6 +132,7 @@ def getBookDataFromISBN(local):
     else:
         dayMonth = str(d.month)
 
+    sendMailStr = local
     daystr = str(d.year) + dayMonth + str(d.day)
     regKey = "wVWM%2Fy12FdbMTHoWxdHSa%2BmdbN04QaafFDA6PF6bGaYyeSZ3t5KlwGhFm928pRHqcA%2FaPAD0g7v9TrPHmlKx1g%3D%3D"
     if conn == None :
@@ -129,6 +154,7 @@ def getBookDataFromISBN(local):
         return None
 
     uri = userURIBuilder(server, base_date=daystr, base_time="0200", nx=inX, ny=inY, serviceKey=regKey)
+    #uri2 = userURIBuilder("http://openapi.airkorea.or.kr/openapi/services/rest/ArpltnInforInqireSvc/getCtprvnMesureLIst?itemCode=PM10&dataGubun=HOUR&pageNo=1&numOfRows=1&ServiceKey=wVWM%2Fy12FdbMTHoWxdHSa%2BmdbN04QaafFDA6PF6bGaYyeSZ3t5KlwGhFm928pRHqcA%2FaPAD0g7v9TrPHmlKx1g%3D%3D")
     conn.request("GET", uri)
 
     req = conn.getresponse()
@@ -144,6 +170,7 @@ def getBookDataFromISBN(local):
 
 def extractBookData(strXml):
     from xml.etree import ElementTree
+    global sendMailStr
     count = 0
     printWea = '0'
     tree = ElementTree.fromstring(strXml)
@@ -156,6 +183,7 @@ def extractBookData(strXml):
         dataTitle = item.find("fcstValue")
         if count == 1:
             print("강수 확률 : ", dataTitle.text, "%")
+            sendMailStr += '<br>강수 확률 : ' + dataTitle.text + "%"
         elif count == 2:
             if dataTitle.text == '0':
                 printWea = "없음"
@@ -166,13 +194,17 @@ def extractBookData(strXml):
             elif dataTitle.text == '3':
                 printWea = "눈"
             print("강수 형태 : ", printWea)
+            sendMailStr += "<br>강수 형태 : " + printWea
             printWea = 0
         elif count == 3:
             print("6시간 강수량 : ", dataTitle.text, "mm")
+            sendMailStr += "<br>6시간 강수량 : " + dataTitle.text + "mm"
         elif count == 4:
             print("습도 : ", dataTitle.text, "%")
+            sendMailStr += "<br>습도 : " + dataTitle.text + "%"
         elif count == 5:
             print("6시간 신적설 : ", dataTitle.text, "cm")
+            sendMailStr += "<br>6시간 신적설 : " + dataTitle.text + "cm"
         elif count == 6:
             if dataTitle.text == '1':
                 printWea = "맑음"
@@ -183,16 +215,22 @@ def extractBookData(strXml):
             elif dataTitle.text == '4':
                 printWea = "흐림"
             print("하늘 상태 : ", printWea)
+            sendMailStr += "<br>하늘 상태 : " + printWea
         elif count == 7:
             print("3시간 기온 : ", dataTitle.text, "℃")
+            sendMailStr += "<br>3시간 기온 : " + dataTitle.text
         elif count == 8:
             print("아침 최저기온 : ", dataTitle.text, "℃")
+            sendMailStr += "<br>아침 최저기온 : " + dataTitle.text
         elif count == 9:
             print("풍속 : ", dataTitle.text, "m/s")
+            sendMailStr += "<br>풍속 : " + dataTitle.text
         elif count == 10:
             print("풍향 : ", dataTitle.text, "m/s")
+            sendMailStr += "<br>풍향 : " + dataTitle.text
             count = 0
             print(" ")
+
         #if len(strTitle.text) > 0 :
         #   return {"category":isbn.text,"fcstValue":strTitle.text}
 
@@ -240,8 +278,28 @@ def sendMain():
     s.login(senderAddr, passwd)    # 로긴을 합니다. 
     s.sendmail(senderAddr , [recipientAddr], msg.as_string())
     s.close()
-    
-    print ("Mail sending complete!!!")
+
+# 메일을 발송한다.
+def sendMail():
+    # MIME 문서를 생성합니다.
+    htmlFD = open(htmlFileName, 'rb')
+    HtmlPart = MIMEText(sendMailStr, 'html')
+    htmlFD.close()
+
+    # 만들었던 mime을 MIMEBase에 첨부 시킨다.
+    msg.attach(HtmlPart)
+
+    s = mysmtplib.MySMTP(host, port)
+    # s.set_debuglevel(1)        # 디버깅이 필요할 경우 주석을 푼다.
+
+    s.ehlo()
+    s.starttls()
+    s.ehlo()
+    s.login("tlstkddn159@gmail.com","sangwoo159")
+    s.sendmail(senderAddr , [recipientAddr], msg.as_string())
+    s.close()
+    print("Mail sending complete!!!")
+
 
 class MyHandler(BaseHTTPRequestHandler):
     

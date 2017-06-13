@@ -6,6 +6,7 @@ from internetbook import *
 def printMenu():
     print("-------------")
     print("날씨 검색 : w")
+    print("이메일 보내기 : e")
     print("종료      : q")
     print("-------------")
     
@@ -23,8 +24,7 @@ def launcherFunction(menu):
         title = str(input ('insert Title :'))
         AddBook({'ISBN':ISBN, 'title':title})
     elif menu == 'e':
-        keyword = str(input ('input keyword to search :'))
-        printBookList(SearchBookTitle(keyword))
+        sendMail()
     elif menu == 'w':
         local = str(input ('도/광역시 를 입력하세요 :'))
         ret = getBookDataFromISBN(local)
