@@ -1,6 +1,6 @@
 # -*- coding:utf-8 -*-
 loopFlag = 1
-from xmlbook import *
+#from xmlbook import *
 from http.client import HTTPConnection
 from http.server import BaseHTTPRequestHandler, HTTPServer
 from datetime import datetime
